@@ -1,13 +1,15 @@
 const pool = require("../config/db");
 const AppError = require("../utils/AppError");
+const bcrypt = require("bcrypt");
 
 const createEmployee = async (req, res, next) => {
   try {
-    const { name, email, role } = req.body;
+    const { name, email,password, role } = req.body;
 
-    if (!name || !email || !role) {
-      return next(new AppError("Name, Email and Role Required", 400));
+    if (!name || !email || !role || !password) {
+      return next(new AppError("Name, Email, password and Role Required", 400));
     }
+    const hashPassword = await bcrypt.hash(password, 10);
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -15,44 +17,14 @@ const createEmployee = async (req, res, next) => {
     }
 
     const result = await pool.query(
-      "INSERT INTO employees (name, email, role) VALUES ($1, $2, $3) RETURNING *",
-      [name, email, role],
+      "INSERT INTO employees (name, email, role, password) VALUES ($1, $2, $3, $4) RETURNING name, email, role",
+      [name, email, role, hashPassword],
     );
-    //   const result = await pool.query(
-    //     `INSERT INTO employees (name,email,role)
-    //  VALUES ('${name}','${email}','${role}')`,
-    //   );
     res.json(result.rows[0]);
   } catch (error) {
-    // if (error.code === "23505") {
-    //   return res.status(400).json({ message: "Email id alredy Exist" });
-    // }
-    // res.status(500).json({ error: error.message });
     next(error);
   }
 };
-
-// const getEmployees = async (req, res) => {
-//   try {
-//     // const { page, limmit } = req.quary.params;
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = parseInt(req.query.limit) || 5;
-//     const offset = (page - 1) * limit;
-
-//     searchText = req.query.search || "";
-
-//     const result = await pool.query(
-//       `SELECT * FROM employees
-//       WHERE name ILIKE $1
-//       ORDER BY id DESC
-//       LIMIT $2 OFFSET $3`,
-//       [`%${searchText}%`,limit, offset],
-//     );
-//     res.json(result.rows);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
 
 const getEmployees = async (req, res, next) => {
   try {
@@ -107,7 +79,6 @@ const updateEmployee = async (req, res, next) => {
     res.json(result.rows[0]);
   } catch (error) {
     next(error);
-    // res.status(500).json({ error: error.message });
   }
 };
 
@@ -128,7 +99,6 @@ const deleteEmployee = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
-    // res.status(500).json({ error: error.message });
   }
 };
 

@@ -1,38 +1,67 @@
 # Employee Management API
 
-A RESTful backend API built using Node.js, Express, and PostgreSQL.
+A RESTful API built with Node.js, Express, and PostgreSQL.
 
-## 🚀 Tech Stack
+## Tech Stack
 - Node.js
 - Express.js
 - PostgreSQL (pg Pool)
-- REST API
+- JWT Authentication
+- Bcrypt
+- Zod Validation
+- Helmet, Morgan, Rate Limiting
 
-## 📌 Features
-- Create employee
-- Get employees with pagination
-- Search employees (case-insensitive)
-- Update employee
-- Delete employee
-- Validation for required fields
-- Duplicate email handling
-- Proper HTTP status codes
-- Global error handling middleware
+## Features
+- Employee CRUD with pagination and search
+- JWT access token + refresh token auth
+- Role-based access control (admin/user)
+- Global error handling
+- Input validation using Zod
+- Security headers with Helmet
+- Rate limiting
 
-## 📂 Project Structure
-src/
-- controllers/
-- routes/
-- config/
-- middleware/
-- utils/
+## Getting Started
 
-## 🔍 Pagination Example
-GET /api/employees?page=1&limit=5
+### Prerequisites
+- Node.js
+- PostgreSQL
 
-## 🔎 Search Example
-GET /api/employees?search=tam
+### Installation
+```bash
+git clone <your-repo-url>
+cd <project-folder>
+npm install
+```
 
-## ▶️ Run Locally
-npm install  
+### Environment Variables
+Create a `.env` file:
+```
+DATABASE_URL=
+JWT_SECRET=
+JWT_EXPIRES_IN=
+JWT_REFRESH_SECRET=
+JWT_REFRESH_EXPIRES_IN=
+```
+
+### Run
+```bash
 npm run dev
+```
+
+## API Endpoints
+
+### Auth
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | /api/auth/register | Register new user |
+| POST | /api/auth/login | Login, get tokens |
+| POST | /api/auth/refresh | Get new access token |
+| POST | /api/auth/logout | Logout |
+
+### Employees
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | /api/employees | Bearer | Get all employees |
+| POST | /api/employees | Admin | Create employee |
+| PUT | /api/employees/:id | Admin | Update employee |
+| DELETE | /api/employees/:id | Admin | Delete employee |

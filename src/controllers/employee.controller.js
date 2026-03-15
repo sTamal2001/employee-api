@@ -1,15 +1,16 @@
 const pool = require("../config/db");
 const AppError = require("../utils/AppError");
 const bcrypt = require("bcrypt");
+const auditLog = require("../utils/auditLog");
 
 const createEmployee = async (req, res, next) => {
   try {
-    const { name, email,password, role } = req.body;
+    const { name, email, role } = req.body;
 
-    if (!name || !email || !role || !password) {
-      return next(new AppError("Name, Email, password and Role Required", 400));
+    if (!name || !email || !role) {
+      return next(new AppError("Name, Email and Role Required", 400));
     }
-    const hashPassword = await bcrypt.hash(password, 10);
+    // const hashPassword = await bcrypt.hash(password, 10);
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -17,9 +18,15 @@ const createEmployee = async (req, res, next) => {
     }
 
     const result = await pool.query(
-      "INSERT INTO employees (name, email, role, password) VALUES ($1, $2, $3, $4) RETURNING name, email, role",
-      [name, email, role, hashPassword],
+      "INSERT INTO employees (name, email, role) VALUES ($1, $2, $3) RETURNING id, name, email, role",
+      [name, email, role],
     );
+    await auditLog({
+      action: "CREATE",
+      tableName: "employees",
+      recordId: result.rows[0].id,
+      performedBy: req.user.id,
+    });
     res.json(result.rows[0]);
   } catch (error) {
     next(error);
@@ -76,6 +83,12 @@ const updateEmployee = async (req, res, next) => {
     if (result.rows.length === 0) {
       return next(new AppError("Employee Not Found", 404));
     }
+    await auditLog({
+      action: "UPDATE",
+      tableName: "employees",
+      recordId: result.rows[0].id,
+      performedBy: req.user.id
+    });
     res.json(result.rows[0]);
   } catch (error) {
     next(error);
@@ -92,6 +105,13 @@ const deleteEmployee = async (req, res, next) => {
     if (result.rows.length === 0) {
       return next(new AppError("Employee Not Found", 404));
     }
+
+    await auditLog({
+      action: "DELETE",
+      tableName: "employees",
+      recordId: result.rows[0].id,
+      performedBy: req.user.id,
+    });
 
     res.json({
       message: "Employee deleted successfully",

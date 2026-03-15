@@ -5,6 +5,7 @@ const errorHandler = require("./middleware/error.middleware");
 const testRoute = require("./routes/test.routes");
 const employeeRoute = require("./routes/employee.routes");
 const authRoute = require("./routes/auth.routes");
+const audiLogRoute = require("./routes/auditLog.routes");
 
 const helmet = require("helmet");
 const morgan = require("morgan");
@@ -29,6 +30,7 @@ app.use(express.json());
 app.use("/api", testRoute);
 app.use("/api/employees", employeeRoute);
 app.use("/api/auth", authRoute);
+app.use("/api/audit-logs", audiLogRoute)
 
 app.use((req, res, next) => {
   next(new AppError(`Route ${req.originalUrl} Not Found`, 404));

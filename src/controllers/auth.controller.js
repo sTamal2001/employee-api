@@ -4,13 +4,17 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
 const register = async (req, res, next) => {
+  let client;
   try {
     const { email, password, role } = req.body;
+
     if (!email || !password) {
       return next(new AppError("Email and password is required", 400));
     }
 
-    const existing = await pool.query("SELECT * FROM users WHERE email=$1", [
+    client = await pool.connect();
+
+    const existing = await client.query("SELECT * FROM users WHERE email=$1", [
       email,
     ]);
 
@@ -18,18 +22,25 @@ const register = async (req, res, next) => {
       return next(new AppError("Email already exists", 409));
     }
 
+    await client.query("BEGIN");
+
     const hashPassword = await bcrypt.hash(password, 10);
 
-    const result = await pool.query(
+    const result = await client.query(
       "INSERT INTO users (email, password, role) values($1, $2, $3) RETURNING id, email, role, created_at",
       [email, hashPassword, role],
     );
+
+    await client.query("COMMIT");
 
     res
       .status(201)
       .json({ message: "User Registered successfully", data: result.rows[0] });
   } catch (error) {
+    if (client) await client.query("ROLLBACK");
     next(error);
+  } finally {
+    if (client) client.release();
   }
 };
 

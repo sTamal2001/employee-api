@@ -2,10 +2,7 @@ const express = require("express");
 const core = require("cors");
 const errorHandler = require("./middleware/error.middleware");
 
-const testRoute = require("./routes/test.routes");
-const employeeRoute = require("./routes/employee.routes");
-const authRoute = require("./routes/auth.routes");
-const audiLogRoute = require("./routes/auditLog.routes");
+const v1Route = require("./routes/v1/index");
 
 const helmet = require("helmet");
 const morgan = require("morgan");
@@ -27,10 +24,8 @@ app.use(
 
 app.use(express.json());
 
-app.use("/api", testRoute);
-app.use("/api/employees", employeeRoute);
-app.use("/api/auth", authRoute);
-app.use("/api/audit-logs", audiLogRoute)
+app.use("/api/v1", v1Route);
+
 
 app.use((req, res, next) => {
   next(new AppError(`Route ${req.originalUrl} Not Found`, 404));

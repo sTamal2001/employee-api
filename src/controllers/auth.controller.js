@@ -88,6 +88,38 @@ const login = async (req, res, next) => {
   }
 };
 
+const changePassword = async (req, res, next) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const id = req.user.id;
+
+    if (!oldPassword || !newPassword) {
+      return next(new AppError("oldPassword and newPassword is required", 400));
+    }
+
+    const user = await pool.query(
+      "SELECT id, password FROM users WHERE id = $1",
+      [id],
+    );
+    if (user.rows.length === 0) {
+      return next(new AppError("User not Found", 404));
+    }
+    const hashPassword = await bcrypt.hash(newPassword, 10);
+    const isValid = await bcrypt.compare(oldPassword, user.rows[0].password);
+    if (!isValid) {
+      return next(new AppError("Password not matched", 401));
+    }
+    await pool.query("UPDATE users SET password = $1 WHERE id= $2", [
+      hashPassword,
+      id,
+    ]);
+
+    res.json({ message: "Password Changed Successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const refreshToken = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
@@ -137,4 +169,4 @@ const logout = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, refreshToken, logout };
+module.exports = { register, login, changePassword, refreshToken, logout };

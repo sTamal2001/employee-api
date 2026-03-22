@@ -53,15 +53,20 @@ npm run dev
 ### Auth
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | /api/auth/register | Register new user |
-| POST | /api/auth/login | Login, get tokens |
-| POST | /api/auth/refresh | Get new access token |
-| POST | /api/auth/logout | Logout |
+| POST | /api/v1/auth/register | Register new user |
+| POST | /api/v1/auth/login | Login, get tokens |
+| POST | /api/v1/auth/refresh | Get new access token |
+| POST | /api/v1/auth/logout | Logout |
 
 ### Employees
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| GET | /api/employees | Bearer | Get all employees |
-| POST | /api/employees | Admin | Create employee |
-| PUT | /api/employees/:id | Admin | Update employee |
-| DELETE | /api/employees/:id | Admin | Delete employee |
+| GET | /api/v1/employees | Bearer | Get all employees |
+| POST | /api/v1/employees | Admin | Create employee |
+| PUT | /api/v1/employees/:id | Admin | Update employee |
+| DELETE | /api/v1/employees/:id | Admin | Delete employee |
+
+### Audit Logs
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | /api/v1/audit-logs | Admin | Get all audit logs |

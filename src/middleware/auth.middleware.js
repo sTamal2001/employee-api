@@ -7,7 +7,7 @@ const authMiddleware = async (req, res, next) => {
     return next(new AppError("Authorization Header Missing", 401));
   }
   const token = authHeader.split(" ")[1];
-  console.log(authHeader);
+  // console.log(authHeader);
 
   if (!token) {
     return next(new AppError("Token is Missing", 401));

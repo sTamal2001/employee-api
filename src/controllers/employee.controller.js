@@ -87,7 +87,7 @@ const updateEmployee = async (req, res, next) => {
       action: "UPDATE",
       tableName: "employees",
       recordId: result.rows[0].id,
-      performedBy: req.user.id
+      performedBy: req.user.id,
     });
     res.json(result.rows[0]);
   } catch (error) {
@@ -122,9 +122,28 @@ const deleteEmployee = async (req, res, next) => {
   }
 };
 
+const getEmployeeById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      "SELECT id, name, email, role FROM employees WHERE id = $1",
+      [id],
+    );
+    if (result.rows.length === 0) {
+      return next(new AppError("Employee Not Found", 404));
+    }
+    res.json({
+      data: result.rows[0],
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createEmployee,
   getEmployees,
   updateEmployee,
   deleteEmployee,
+  getEmployeeById,
 };

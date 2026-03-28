@@ -2,6 +2,8 @@ const pool = require("../config/db");
 const AppError = require("../utils/AppError");
 const bcrypt = require("bcrypt");
 const auditLog = require("../utils/auditLog");
+const redisClient = require("../config/redis");
+const clearEmployeeCache = require("../utils/clearCache");
 
 const createEmployee = async (req, res, next) => {
   try {
@@ -10,7 +12,6 @@ const createEmployee = async (req, res, next) => {
     if (!name || !email || !role) {
       return next(new AppError("Name, Email and Role Required", 400));
     }
-    // const hashPassword = await bcrypt.hash(password, 10);
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -27,6 +28,7 @@ const createEmployee = async (req, res, next) => {
       recordId: result.rows[0].id,
       performedBy: req.user.id,
     });
+    await clearEmployeeCache();
     res.json(result.rows[0]);
   } catch (error) {
     next(error);
@@ -41,6 +43,23 @@ const getEmployees = async (req, res, next) => {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 5;
     const offset = (pageNum - 1) * limitNum;
+
+    const cacheKey = `employees:${searchText}:${pageNum}:${limitNum}`;
+
+    // try cache — but don't crash if Redis is down
+    try {
+      const cached = await redisClient.get(cacheKey);
+      if (cached) {
+        console.log("Cache hit");
+        return res.json(JSON.parse(cached));
+      }
+    } catch (redisError) {
+      console.error(
+        "Redis unavailable, falling back to DB:",
+        redisError.message,
+      );
+      // continue to database query below
+    }
 
     const dataResult = await pool.query(
       `SELECT * FROM employees 
@@ -57,13 +76,24 @@ const getEmployees = async (req, res, next) => {
 
     const total = parseInt(countResult.rows[0].count);
     const totalPages = Math.ceil(total / limitNum);
-    res.json({
+
+    const response = {
       data: dataResult.rows,
       page: pageNum,
       limit: limitNum,
       total,
       totalPages,
-    });
+    };
+
+    // try to cache — but don't crash if Redis is down
+    try {
+      await redisClient.setEx(cacheKey, 60, JSON.stringify(response));
+      console.log("Cache miss — stored in Redis");
+    } catch (redisError) {
+      console.error("Redis unavailable, skipping cache:", redisError.message);
+    }
+
+    res.json(response);
   } catch (error) {
     next(error);
   }
@@ -89,6 +119,7 @@ const updateEmployee = async (req, res, next) => {
       recordId: result.rows[0].id,
       performedBy: req.user.id,
     });
+    await clearEmployeeCache();
     res.json(result.rows[0]);
   } catch (error) {
     next(error);
@@ -112,6 +143,7 @@ const deleteEmployee = async (req, res, next) => {
       recordId: result.rows[0].id,
       performedBy: req.user.id,
     });
+    await clearEmployeeCache();
 
     res.json({
       message: "Employee deleted successfully",
